@@ -28,7 +28,26 @@ my ($ws, $ws1, $ws2, $ws3);
 my ($node, $nodes, $expected_focus, $A, $B, $F);
 my ($result);
 my @fullscreen_permutations = ([], ["A"], ["B"], ["A", "B"]);
+my $rect_A = [ 100, 100, 100, 100 ];
+my $rect_B = [ 200, 200, 200, 200 ];
 my @urgent;
+
+sub fullscreen_windows {
+    my $ws = shift if @_;
+
+    scalar grep { $_->{fullscreen_mode} != 0 } @{get_ws_content($ws)}
+}
+
+sub cmp_floating_rect {
+    my ($window, $rect, $prefix) = @_;
+    my ($absolute, $top) = $window->rect;
+
+    is($absolute->{width}, $rect->[2], "$prefix: width matches");
+    is($absolute->{height}, $rect->[3], "$prefix: height matches");
+
+    is($top->{x}, $rect->[0], "$prefix: x matches");
+    is($top->{y}, $rect->[1], "$prefix: y matches");
+}
 
 ###############################################################################
 # Invalid con_id should not crash i3
@@ -499,6 +518,119 @@ cmd '[con_mark=B] swap container with mark A';
 $nodes = get_ws_content($ws);
 cmp_float($nodes->[0]->{nodes}->[0]->{percent}, 0.25, 'B has 25% height');
 cmp_float($nodes->[1]->{nodes}->[0]->{percent}, 0.75, 'A has 75% height');
+
+kill_all_windows;
+
+###############################################################################
+# Swap floating windows in the same workspace. Check that they exchange rects.
+###############################################################################
+$ws = fresh_workspace;
+
+$A = open_floating_window(wm_class => 'mark_A', rect => $rect_A);
+$B = open_floating_window(wm_class => 'mark_B', rect => $rect_B);
+
+cmd '[con_mark=B] swap container with mark A';
+cmp_floating_rect($A, $rect_B, 'A got B\'s rect');
+cmp_floating_rect($B, $rect_A, 'B got A\'s rect');
+
+kill_all_windows;
+
+###############################################################################
+# Swap a fullscreen floating and a normal floating window.
+###############################################################################
+$ws1 = fresh_workspace;
+$A = open_floating_window(wm_class => 'mark_A', rect => $rect_A, fullscreen => 1);
+$ws2 = fresh_workspace;
+$B = open_floating_window(wm_class => 'mark_B', rect => $rect_B);
+
+cmd '[con_mark=B] swap container with mark A';
+sync_with_i3;
+
+cmp_floating_rect($A, $rect_B, 'A got B\'s rect');
+
+$nodes = get_ws($ws1);
+$node = $nodes->{floating_nodes}->[0]->{nodes}->[0];
+is($node->{window}, $B->{id}, 'B is on the first workspace');
+is($node->{fullscreen_mode}, 1, 'B is now fullscreened');
+
+$nodes = get_ws($ws2);
+$node = $nodes->{floating_nodes}->[0]->{nodes}->[0];
+is($node->{window}, $A->{id}, 'A is on the second workspace');
+is($node->{fullscreen_mode}, 0, 'A is not fullscreened anymore');
+
+kill_all_windows;
+
+###############################################################################
+# Swap a floating window which is in a workspace that has another, regular
+# window with a regular window in another workspace. A & B focused.
+#
+# Before:
+# +-----------+
+# |         F |
+# |   +---+   |
+# |   | A |   |
+# |   +---+   |
+# |           |
+# +-----------+
+#
+# +-----------+
+# |           |
+# |           |
+# |     B     |
+# |           |
+# |           |
+# +-----------+
+#
+# After: Same as above but A <-> B. A & B focused.
+###############################################################################
+$ws1 = fresh_workspace;
+open_window;
+$A = open_floating_window(wm_class => 'mark_A', rect => $rect_A);
+$ws2 = fresh_workspace;
+$B = open_window(wm_class => 'mark_B');
+$expected_focus = get_focused($ws2);
+
+cmd '[con_mark=B] swap container with mark A';
+cmd "workspace $ws1"; # TODO: Why does rect check fails without switching workspaces?
+sync_with_i3;
+
+$nodes = get_ws($ws1);
+$node = $nodes->{floating_nodes}->[0]->{nodes}->[0];
+is($node->{window}, $B->{id}, 'B is floating on the first workspace');
+is(get_focused($ws1), $expected_focus, 'B is focused');
+cmp_floating_rect($B, $rect_A, 'B got A\'s rect');
+
+$nodes = get_ws_content($ws2);
+$node = $nodes->[0];
+is($node->{window}, $A->{id}, 'A is on the second workspace');
+
+kill_all_windows;
+
+###############################################################################
+# Swap a sticky, floating container A and a floating fullscreen container B.
+# A should remain sticky and floating and should be fullscreened.
+###############################################################################
+$ws1 = fresh_workspace;
+open_window;
+$A = open_floating_window(wm_class => 'mark_A', rect => $rect_A);
+$expected_focus = get_focused($ws1);
+cmd 'sticky enable';
+$B = open_floating_window(wm_class => 'mark_B', rect => $rect_B);
+cmd 'fullscreen enable';
+
+cmd '[con_mark=B] swap container with mark A';
+sync_with_i3;
+
+is(@{get_ws($ws1)->{floating_nodes}}, 2, '2 fullscreen containers on first workspace');
+is(get_focused($ws1), $expected_focus, 'A is focused');
+
+$ws2 = fresh_workspace;
+cmd 'fullscreen disable';
+cmp_floating_rect($A, $rect_B, 'A got B\'s rect');
+is(@{get_ws($ws2)->{floating_nodes}}, 1, 'only A in new workspace');
+
+cmd "workspace $ws1"; # TODO: Why does rect check fails without switching workspaces?
+cmp_floating_rect($B, $rect_A, 'B got A\'s rect');
 
 kill_all_windows;
 

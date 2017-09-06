@@ -2316,6 +2316,16 @@ i3String *con_parse_title_format(Con *con) {
     return formatted;
 }
 
+static Rect *get_floating_rect_and_disable(Con *con) {
+    Rect *result = NULL;
+    if (con_is_floating(con)) {
+        result = smalloc(sizeof(Rect));
+        *result = con->parent->rect;
+        floating_disable(con, false);
+    }
+    return result;
+}
+
 /*
  * Swaps the two containers.
  *
@@ -2332,11 +2342,6 @@ bool con_swap(Con *first, Con *second) {
 
     if (second->type != CT_CON) {
         ELOG("Only regular containers can be swapped, but found con = %p with type = %d.\n", second, second->type);
-        return false;
-    }
-
-    if (con_is_floating(first) || con_is_floating(second)) {
-        ELOG("Floating windows cannot be swapped.\n");
         return false;
     }
 
@@ -2359,6 +2364,8 @@ bool con_swap(Con *first, Con *second) {
     const bool focused_within_second = (second == old_focus || con_has_parent(old_focus, second));
     fullscreen_mode_t first_fullscreen_mode = first->fullscreen_mode;
     fullscreen_mode_t second_fullscreen_mode = second->fullscreen_mode;
+    Rect *first_floating_rect = get_floating_rect_and_disable(first);
+    Rect *second_floating_rect = get_floating_rect_and_disable(second);
 
     if (first_fullscreen_mode != CF_NONE) {
         con_disable_fullscreen(first);
@@ -2467,10 +2474,12 @@ bool con_swap(Con *first, Con *second) {
     second->percent = first_percent;
     fake->percent = 0.0;
 
+    /* The two windows exchange their original fullscreen status */
     SWAP(first_fullscreen_mode, second_fullscreen_mode, fullscreen_mode_t);
+    /* And their floating status */
+    SWAP(first_floating_rect, second_floating_rect, Rect *);
 
 swap_end:
-    /* The two windows exchange their original fullscreen status */
     if (first_fullscreen_mode != CF_NONE) {
         con_enable_fullscreen(first, first_fullscreen_mode);
     }
@@ -2489,6 +2498,17 @@ swap_end:
 
     con_force_split_parents_redraw(first);
     con_force_split_parents_redraw(second);
+
+    if (first_floating_rect) {
+        floating_enable(first, false);
+        floating_reposition(first->parent, *first_floating_rect);
+        free(first_floating_rect);
+    }
+    if (second_floating_rect) {
+        floating_enable(second, false);
+        floating_reposition(second->parent, *second_floating_rect);
+        free(second_floating_rect);
+    }
 
     return result;
 }
