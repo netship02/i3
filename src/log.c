@@ -312,6 +312,21 @@ void verboselog(char *fmt, ...) {
     va_end(args);
 }
 
+static char *errorlog_buffer;
+static bool keep_ELOG;
+
+void keep_errorlog(void) {
+    keep_ELOG = true;
+    FREE(errorlog_buffer);
+}
+
+char *stop_errorlog(void) {
+    keep_ELOG = false;
+    char *result = errorlog_buffer ? sstrdup(errorlog_buffer) : NULL;
+    FREE(errorlog_buffer);
+    return result;
+}
+
 /*
  * Logs the given message to stdout while prefixing the current time to it.
  *
@@ -328,6 +343,12 @@ void errorlog(char *fmt, ...) {
     vfprintf(errorfile, fmt, args);
     fflush(errorfile);
     va_end(args);
+
+    if (keep_ELOG) {
+        va_start(args, fmt);
+        vasprintf(&errorlog_buffer, fmt, args);
+        va_end(args);
+    }
 }
 
 /*

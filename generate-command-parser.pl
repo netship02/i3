@@ -132,6 +132,9 @@ close($enumfh);
 open(my $callfh, '>', "GENERATED_${prefix}_call.h");
 my $resultname = uc(substr($prefix, 0, 1)) . substr($prefix, 1) . 'ResultIR';
 say $callfh "static void GENERATED_call(const int call_identifier, struct $resultname *result) {";
+say $callfh '#ifndef TEST_PARSER';
+say $callfh '    keep_errorlog();';
+say $callfh '#endif';
 say $callfh '    switch (call_identifier) {';
 my $call_id = 0;
 for my $state (@keys) {

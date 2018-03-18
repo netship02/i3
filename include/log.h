@@ -103,3 +103,6 @@ void verboselog(char *fmt, ...)
  * failures. This function is invoked automatically when exiting.
  */
 void purge_zerobyte_logfile(void);
+
+void keep_errorlog(void);
+char *stop_errorlog(void);

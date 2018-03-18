@@ -65,6 +65,7 @@ typedef struct reply_t {
     char *error;
     char *input;
     char *errorposition;
+    char *ELOG;
 } reply_t;
 
 static reply_t last_reply;
@@ -84,6 +85,8 @@ static int reply_string_cb(void *params, const unsigned char *val, size_t len) {
         last_reply.input = str;
     else if (strcmp(last_key, "errorposition") == 0)
         last_reply.errorposition = str;
+    else if (strcmp(last_key, "ELOG") == 0)
+        last_reply.ELOG = str;
     else
         free(str);
     return 1;
@@ -100,6 +103,10 @@ static int reply_end_map_cb(void *params) {
             fprintf(stderr, "ERROR:               %s\n", last_reply.errorposition);
         }
         fprintf(stderr, "ERROR: %s\n", last_reply.error);
+
+        if (last_reply.ELOG) {
+            fprintf(stderr, "\nError log:\n%s\n", last_reply.ELOG);
+        }
     }
     return 1;
 }

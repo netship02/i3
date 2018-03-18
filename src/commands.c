@@ -22,14 +22,20 @@
 // Macros to make the YAJL API a bit easier to use.
 #define y(x, ...) (cmd_output->json_gen != NULL ? yajl_gen_##x(cmd_output->json_gen, ##__VA_ARGS__) : 0)
 #define ystr(str) (cmd_output->json_gen != NULL ? yajl_gen_string(cmd_output->json_gen, (unsigned char *)str, strlen(str)) : 0)
-#define ysuccess(success)                   \
-    do {                                    \
-        if (cmd_output->json_gen != NULL) { \
-            y(map_open);                    \
-            ystr("success");                \
-            y(bool, success);               \
-            y(map_close);                   \
-        }                                   \
+#define ysuccess(success)                     \
+    do {                                      \
+        if (cmd_output->json_gen != NULL) {   \
+            y(map_open);                      \
+            ystr("success");                  \
+            y(bool, success);                 \
+            char *errorlog = stop_errorlog(); \
+            if (errorlog) {                   \
+                ystr("ELOG");                 \
+                ystr(errorlog);               \
+            }                                 \
+            y(map_close);                     \
+            free(errorlog);                   \
+        }                                     \
     } while (0)
 #define yerror(format, ...)                             \
     do {                                                \
@@ -41,8 +47,14 @@
             y(bool, false);                             \
             ystr("error");                              \
             ystr(message);                              \
+            char *errorlog = stop_errorlog();           \
+            if (errorlog) {                             \
+                ystr("ELOG");                           \
+                ystr(errorlog);                         \
+            }                                           \
             y(map_close);                               \
             free(message);                              \
+            free(errorlog);                             \
         }                                               \
     } while (0)
 
