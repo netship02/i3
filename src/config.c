@@ -17,6 +17,7 @@ char *current_config = NULL;
 Config config;
 struct modes_head modes;
 struct barconfig_head barconfigs = TAILQ_HEAD_INITIALIZER(barconfigs);
+struct old_assignments_head old_assignments = TAILQ_HEAD_INITIALIZER(assignments);
 
 /**
  * Ungrabs all keys, to be called before re-grabbing the keys because of a
@@ -65,6 +66,28 @@ bool parse_configuration(const char *override_configpath, bool use_nagbar) {
     return parse_file(path, use_nagbar);
 }
 
+static void free_assignment(Assignment *assign) {
+    if (assign->type == A_TO_WORKSPACE || assign->type == A_TO_WORKSPACE_NUMBER)
+        FREE(assign->dest.workspace);
+    else if (assign->type == A_COMMAND) {
+        FREE(assign->dest.command);
+    } else if (assign->type == A_TO_OUTPUT)
+        FREE(assign->dest.output);
+    match_free(&(assign->match));
+    TAILQ_REMOVE(&assignments, assign, assignments);
+    FREE(assign);
+}
+
+static bool is_old_assignment(Assignment *assign) {
+    Assignment *current;
+    TAILQ_FOREACH(current, &old_assignments, assignments) {
+        if (assign == current) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
  * (Re-)loads the configuration file (sets useful defaults before).
  *
@@ -96,18 +119,17 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
             FREE(mode);
         }
 
+        TAILQ_INIT(&old_assignments);
         struct Assignment *assign;
         while (!TAILQ_EMPTY(&assignments)) {
             assign = TAILQ_FIRST(&assignments);
-            if (assign->type == A_TO_WORKSPACE || assign->type == A_TO_WORKSPACE_NUMBER)
-                FREE(assign->dest.workspace);
-            else if (assign->type == A_COMMAND)
-                FREE(assign->dest.command);
-            else if (assign->type == A_TO_OUTPUT)
-                FREE(assign->dest.output);
-            match_free(&(assign->match));
-            TAILQ_REMOVE(&assignments, assign, assignments);
-            FREE(assign);
+            if (assign->type == A_COMMAND) {
+                TAILQ_REMOVE(&assignments, assign, assignments);
+                TAILQ_INSERT_TAIL(&old_assignments, assign, assignments);
+                continue;
+            }
+
+            free_assignment(assign);
         }
 
         /* Clear bar configs */
@@ -160,17 +182,6 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
             FREE(barconfig->colors.binding_mode_text);
             TAILQ_REMOVE(&barconfigs, barconfig, configs);
             FREE(barconfig);
-        }
-
-        Con *con;
-        TAILQ_FOREACH(con, &all_cons, all_cons) {
-            /* Assignments changed, previously ran assignments are invalid. */
-            if (con->window) {
-                con->window->nr_assignments = 0;
-                FREE(con->window->ran_assignments);
-            }
-            /* Invalidate pixmap caches in case font or colors changed. */
-            FREE(con->deco_render_params);
         }
 
         /* Get rid of the current font */
@@ -235,22 +246,51 @@ void load_configuration(xcb_connection_t *conn, const char *override_configpath,
 
     parse_configuration(override_configpath, true);
 
-    if (reload) {
-        translate_keysyms();
-        grab_all_keys(conn);
-        regrab_all_buttons(conn);
-    }
-
     if (config.font.type == FONT_TYPE_NONE) {
         ELOG("You did not specify required configuration option \"font\"\n");
         config.font = load_font("fixed", true);
         set_font(&config.font);
     }
 
+    if (!reload) {
+        return;
+    }
+
+    Con *con;
+    TAILQ_FOREACH(con, &all_cons, all_cons) {
+        /* Invalidate pixmap caches in case font or colors changed. */
+        FREE(con->deco_render_params);
+
+        //TODO: test removed assignments, test added assignment, test same assignments.
+        /* Assignments changed, previously ran assignments are invalid. */
+        if (!con->window || !con->window->nr_assignments) {
+            continue;
+        }
+
+        uint32_t nr_assignments = 0;
+        Assignment **ran_assignments = malloc(con->window->nr_assignments * sizeof(Assignment));
+        for (uint32_t idx = 0; idx < con->window->nr_assignments; idx++) {
+            Assignment *assign = con->window->ran_assignments[idx];
+            if (!is_old_assignment(assign)) {
+                ran_assignments[nr_assignments++] = assign;
+            }
+        }
+
+        free(con->window->ran_assignments);
+        con->window->ran_assignments = realloc(ran_assignments, (++nr_assignments) * sizeof(Assignment));
+        con->window->nr_assignments = nr_assignments;
+    }
+
+    while (!TAILQ_EMPTY(&old_assignments)) {
+        free_assignment(TAILQ_FIRST(&old_assignments));
+    }
+
+    translate_keysyms();
+    grab_all_keys(conn);
+    regrab_all_buttons(conn);
+
     /* Redraw the currently visible decorations on reload, so that
      * the possibly new drawing parameters changed. */
-    if (reload) {
-        x_deco_recurse(croot);
-        xcb_flush(conn);
-    }
+    x_deco_recurse(croot);
+    xcb_flush(conn);
 }
