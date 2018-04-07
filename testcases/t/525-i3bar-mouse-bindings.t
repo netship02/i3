@@ -100,19 +100,11 @@ sub focus_subtest {
     is_deeply(\@focus, $want, $msg);
 }
 
-sub sync {
-    # Ensure XTEST events were sent to i3, which grabs and hence needs to
-    # forward any events to i3bar:
-    xtest_sync_with_i3;
-    # Ensure any pending i3bar IPC messages were handled by i3:
-    xtest_sync_with($i3bar_window);
-}
-
 subtest 'button 1 moves focus left', \&focus_subtest,
     sub {
 	xtest_button_press(1, 3, 3);
 	xtest_button_release(1, 3, 3);
-	sync;
+	xtest_sync_with($i3bar_window);
     },
     [ $left->{id} ],
     'button 1 moves focus left';
@@ -121,7 +113,7 @@ subtest 'button 2 moves focus right', \&focus_subtest,
     sub {
 	xtest_button_press(2, 3, 3);
 	xtest_button_release(2, 3, 3);
-	sync;
+	xtest_sync_with($i3bar_window);
     },
     [ $right->{id} ],
     'button 2 moves focus right';
@@ -130,7 +122,7 @@ subtest 'button 3 moves focus left', \&focus_subtest,
     sub {
 	xtest_button_press(3, 3, 3);
 	xtest_button_release(3, 3, 3);
-	sync;
+	xtest_sync_with($i3bar_window);
     },
     [ $left->{id} ],
     'button 3 moves focus left';
@@ -139,7 +131,7 @@ subtest 'button 4 moves focus right', \&focus_subtest,
     sub {
 	xtest_button_press(4, 3, 3);
 	xtest_button_release(4, 3, 3);
-	sync;
+	xtest_sync_with($i3bar_window);
     },
     [ $right->{id} ],
     'button 4 moves focus right';
@@ -148,7 +140,7 @@ subtest 'button 5 moves focus left', \&focus_subtest,
     sub {
 	xtest_button_press(5, 3, 3);
 	xtest_button_release(5, 3, 3);
-	sync;
+	xtest_sync_with($i3bar_window);
     },
     [ $left->{id} ],
     'button 5 moves focus left';
@@ -160,7 +152,7 @@ my $old_focus = get_focused($ws);
 subtest 'button 6 does not move focus while pressed', \&focus_subtest,
     sub {
         xtest_button_press(6, 3, 3);
-        sync;
+        xtest_sync_with($i3bar_window);
     },
     [],
     'button 6 does not move focus while pressed';
@@ -169,7 +161,7 @@ is(get_focused($ws), $old_focus, 'focus unchanged');
 subtest 'button 6 release moves focus right', \&focus_subtest,
     sub {
         xtest_button_release(6, 3, 3);
-        sync;
+        xtest_sync_with($i3bar_window);
     },
     [ $right->{id} ],
     'button 6 release moves focus right';
@@ -179,7 +171,7 @@ subtest 'button 6 release moves focus right', \&focus_subtest,
 subtest 'button 7 press moves focus left', \&focus_subtest,
     sub {
         xtest_button_press(7, 3, 3);
-        sync;
+        xtest_sync_with($i3bar_window);
     },
     [ $left->{id} ],
     'button 7 press moves focus left';
@@ -187,7 +179,7 @@ subtest 'button 7 press moves focus left', \&focus_subtest,
 subtest 'button 7 release moves focus right', \&focus_subtest,
     sub {
         xtest_button_release(7, 3, 3);
-        sync;
+        xtest_sync_with($i3bar_window);
     },
     [ $right->{id} ],
     'button 7 release moves focus right';
