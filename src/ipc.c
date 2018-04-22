@@ -38,6 +38,18 @@ static void set_nonblock(int sockfd) {
         err(-1, "Could not set O_NONBLOCK");
 }
 
+static bool socket_writeable(int sockfd) {
+    fd_set wset;
+    FD_ZERO(&wset);
+    FD_SET(sockfd, &wset);
+
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 50000;
+
+    return select(sockfd + 1, NULL, &wset, NULL, &tv) > 0;
+}
+
 static void free_ipc_client(ipc_client *client) {
     close(client->fd);
     for (int i = 0; i < client->num_events; i++)
@@ -53,8 +65,12 @@ static void free_ipc_client(ipc_client *client) {
  *
  */
 void ipc_send_event(const char *event, uint32_t message_type, const char *payload) {
-    ipc_client *current;
-    TAILQ_FOREACH(current, &all_clients, clients) {
+    ipc_client *next = TAILQ_FIRST(&all_clients);
+    /* Use a while loop because we want to remove misbehaving clients. */
+    while (next) {
+        ipc_client *current = next;
+        next = TAILQ_NEXT(current, clients);
+
         /* see if this client is interested in this event */
         bool interested = false;
         for (int i = 0; i < current->num_events; i++) {
@@ -66,7 +82,12 @@ void ipc_send_event(const char *event, uint32_t message_type, const char *payloa
         if (!interested)
             continue;
 
-        ipc_send_message(current->fd, strlen(payload), message_type, (const uint8_t *)payload);
+        if (socket_writeable(current->fd)) {
+            ipc_send_message(current->fd, strlen(payload), message_type, (const uint8_t *)payload);
+        } else {
+            DLOG("fd %d not writeable, closing client %p\n", current->fd, current);
+            free_ipc_client(current);
+        }
     }
 }
 
