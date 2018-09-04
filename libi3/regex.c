@@ -7,7 +7,7 @@
  * regex.c: Interface to libPCRE (perl compatible regular expressions).
  *
  */
-#include "all.h"
+#include "libi3.h"
 
 /*
  * Creates a new 'regex' struct containing the given pattern and a PCRE
@@ -52,16 +52,17 @@ struct regex *regex_new(const char *pattern) {
 }
 
 /*
- * Frees the given regular expression. It must not be used afterwards!
+ * Frees the given regular expression.
  *
  */
 void regex_free(struct regex *regex) {
-    if (!regex)
+    if (!regex) {
         return;
-    FREE(regex->pattern);
-    FREE(regex->regex);
-    FREE(regex->extra);
-    FREE(regex);
+    }
+    free(regex->pattern);
+    free(regex->regex);
+    free(regex->extra);
+    free(regex);
 }
 
 /*

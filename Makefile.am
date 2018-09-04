@@ -307,6 +307,7 @@ libi3_a_SOURCES = \
 	libi3/get_mod_mask.c \
 	libi3/get_process_filename.c \
 	libi3/get_visualtype.c \
+	libi3/regex.c \
 	libi3/ipc_connect.c \
 	libi3/ipc_recv_message.c \
 	libi3/ipc_send_message.c \
@@ -380,6 +381,7 @@ i3bar_i3bar_CFLAGS = \
 	$(XCB_CFLAGS) \
 	$(XKBCOMMON_CFLAGS) \
 	$(PANGOCAIRO_CFLAGS) \
+	$(LIBPCRE_CFLAGS) \
 	$(YAJL_CFLAGS)
 
 i3bar_i3bar_LDADD = \
@@ -388,6 +390,7 @@ i3bar_i3bar_LDADD = \
 	$(XCB_UTIL_CURSOR_LIBS) \
 	$(XKBCOMMON_LIBS) \
 	$(PANGOCAIRO_LIBS) \
+	$(LIBPCRE_LIBS) \
 	$(YAJL_LIBS)
 
 i3bar_i3bar_SOURCES = \
@@ -516,7 +519,6 @@ i3_SOURCES = \
 	include/output.h \
 	include/queue.h \
 	include/randr.h \
-	include/regex.h \
 	include/render.h \
 	include/resize.h \
 	include/restore_layout.h \
@@ -559,7 +561,6 @@ i3_SOURCES = \
 	src/move.c \
 	src/output.c \
 	src/randr.c \
-	src/regex.c \
 	src/render.c \
 	src/resize.c \
 	src/restore_layout.c \

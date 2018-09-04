@@ -21,6 +21,7 @@
 
 #include <pango/pango.h>
 #include <cairo/cairo-xcb.h>
+#include <pcre.h>
 
 #define DEFAULT_DIR_MODE (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
 
@@ -629,3 +630,44 @@ void draw_util_clear_surface(surface_t *surface, color_t color);
  */
 void draw_util_copy_surface(surface_t *src, surface_t *dest, double src_x, double src_y,
                             double dest_x, double dest_y, double width, double height);
+
+/**
+ * Regular expression wrapper. It contains the pattern itself as a string (like
+ * ^foo[0-9]$) as well as a pointer to the compiled PCRE expression and the
+ * pcre_extra data returned by pcre_study().
+ *
+ * This makes it easier to have a useful logfile, including the matching or
+ * non-matching pattern.
+ *
+ */
+struct regex {
+    char *pattern;
+    pcre *regex;
+    pcre_extra *extra;
+};
+
+/**
+ * Creates a new 'regex' struct containing the given pattern and a PCRE
+ * compiled regular expression. Also, calls pcre_study because this regex will
+ * most likely be used often (like for every new window and on every relevant
+ * property change of existing windows).
+ *
+ * Returns NULL if the pattern could not be compiled into a regular expression
+ * (and ELOGs an appropriate error message).
+ *
+ */
+struct regex *regex_new(const char *pattern);
+
+/**
+ * Frees the given regular expression.
+ *
+ */
+void regex_free(struct regex *regex);
+
+/**
+ * Checks if the given regular expression matches the given input and returns
+ * true if it does. In either case, it logs the outcome using LOG(), so it will
+ * be visible without debug logging.
+ *
+ */
+bool regex_matches(struct regex *regex, const char *input);

@@ -16,7 +16,6 @@
 
 #include <xcb/randr.h>
 #include <stdbool.h>
-#include <pcre.h>
 #include <sys/time.h>
 
 #include "queue.h"
@@ -239,21 +238,6 @@ struct Startup_Sequence {
 
     TAILQ_ENTRY(Startup_Sequence)
     sequences;
-};
-
-/**
- * Regular expression wrapper. It contains the pattern itself as a string (like
- * ^foo[0-9]$) as well as a pointer to the compiled PCRE expression and the
- * pcre_extra data returned by pcre_study().
- *
- * This makes it easier to have a useful logfile, including the matching or
- * non-matching pattern.
- *
- */
-struct regex {
-    char *pattern;
-    pcre *regex;
-    pcre_extra *extra;
 };
 
 /**
