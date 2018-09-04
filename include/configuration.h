@@ -330,6 +330,9 @@ struct Barconfig {
      * but we invert the bool for the same reason as hide_workspace_buttons.*/
     bool hide_binding_mode_indicator;
 
+    /**TODO*/
+    char *ignore_ws;
+
     /** Enable verbose mode? Useful for debugging purposes. */
     bool verbose;
 

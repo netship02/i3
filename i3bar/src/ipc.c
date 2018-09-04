@@ -176,6 +176,7 @@ void got_bar_config_update(char *event) {
     i3_send_msg(I3_IPC_MESSAGE_TYPE_GET_OUTPUTS, NULL);
 
     free_colors(&(config.colors));
+    regex_free(config.ignore_ws);
 
     /* update the configuration with the received settings */
     DLOG("Received bar config update \"%s\"\n", event);

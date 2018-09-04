@@ -540,8 +540,7 @@ void handle_button(xcb_button_press_event_t *event) {
     }
 
     if (cur_ws == NULL) {
-        DLOG("No workspace active?\n");
-        return;
+        cur_ws = clicked_ws;
     }
     switch (event->detail) {
         case XCB_BUTTON_SCROLL_UP:

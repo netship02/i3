@@ -621,6 +621,10 @@ CFGFUN(bar_strip_workspace_name, const char *value) {
     current_bar->strip_workspace_name = eval_boolstr(value);
 }
 
+CFGFUN(bar_ignore_ws, const char *value) {
+    current_bar->ignore_ws = sstrdup(value);
+}
+
 CFGFUN(bar_start) {
     current_bar = scalloc(1, sizeof(struct Barconfig));
     TAILQ_INIT(&(current_bar->bar_bindings));

@@ -105,6 +105,14 @@ static int config_string_cb(void *params_, const unsigned char *val, size_t _len
         return 1;
     }
 
+    if (!strcmp(cur_key, "ignore_ws")) {
+        /* Argument of regex_new needs to be NULL-terminated. */
+        char *ignore_ws = sstrndup((const char*)val, len);
+        config.ignore_ws = regex_new(ignore_ws);
+        free(ignore_ws);
+        return 1;
+    }
+
     if (!strcmp(cur_key, "mode")) {
         DLOG("mode = %.*s, len = %d\n", len, val, len);
         config.hide_on_modifier = (len == strlen("dock") && !strncmp((const char *)val, "dock", strlen("dock")) ? M_DOCK
