@@ -787,6 +787,11 @@ static void dump_bar_config(yajl_gen gen, Barconfig *config) {
     ystr("binding_mode_indicator");
     y(bool, !config->hide_binding_mode_indicator);
 
+    if (config->ignore_ws_starting_with) {
+        ystr("ignore_ws_starting_with");
+        ystr(config->ignore_ws_starting_with);
+    }
+
     ystr("verbose");
     y(bool, config->verbose);
 

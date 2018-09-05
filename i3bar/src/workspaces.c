@@ -104,6 +104,10 @@ static int workspaces_string_cb(void *params_, const unsigned char *val, size_t 
 
     if (!strcmp(params->cur_key, "name")) {
         const char *ws_name = (const char *)val;
+        if (config.ignore_ws_starting_with &&
+            STARTS_WITH(ws_name, strlen(config.ignore_ws_starting_with), config.ignore_ws_starting_with)) {
+            return 1;
+        }
         params->workspaces_walk->canonical_name = sstrndup(ws_name, len);
 
         if ((config.strip_ws_numbers || config.strip_ws_name) && params->workspaces_walk->num >= 0) {
@@ -147,6 +151,11 @@ static int workspaces_string_cb(void *params_, const unsigned char *val, size_t 
     }
 
     if (!strcmp(params->cur_key, "output")) {
+        if (!params->workspaces_walk->name) {
+            /* Workspace was skipped. */
+            return 1;
+        }
+
         /* We add the ws to the TAILQ of the output, it belongs to */
         char *output_name = NULL;
         sasprintf(&output_name, "%.*s", len, val);

@@ -105,6 +105,11 @@ static int config_string_cb(void *params_, const unsigned char *val, size_t _len
         return 1;
     }
 
+    if (!strcmp(cur_key, "ignore_ws_starting_with")) {
+        config.ignore_ws_starting_with = strndup((const char *)val, len);
+        return 1;
+    }
+
     if (!strcmp(cur_key, "mode")) {
         DLOG("mode = %.*s, len = %d\n", len, val, len);
         config.hide_on_modifier = (len == strlen("dock") && !strncmp((const char *)val, "dock", strlen("dock")) ? M_DOCK

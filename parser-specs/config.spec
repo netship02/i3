@@ -462,6 +462,7 @@ state BAR:
   'workspace_buttons'      -> BAR_WORKSPACE_BUTTONS
   'strip_workspace_numbers' -> BAR_STRIP_WORKSPACE_NUMBERS
   'strip_workspace_name' -> BAR_STRIP_WORKSPACE_NAME
+  'ignore_ws_starting_with' -> IGNORE_WS_STARTING_WITH
   'verbose'                -> BAR_VERBOSE
   'colors'                 -> BAR_COLORS_BRACE
   '}'
@@ -571,6 +572,10 @@ state BAR_STRIP_WORKSPACE_NUMBERS:
 state BAR_STRIP_WORKSPACE_NAME:
   value = word
       -> call cfg_bar_strip_workspace_name($value); BAR
+
+state IGNORE_WS_STARTING_WITH:
+  value = word
+      -> call cfg_bar_ignore_ws_starting_with($value); BAR
 
 state BAR_VERBOSE:
   value = word
