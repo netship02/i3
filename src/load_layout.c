@@ -626,9 +626,7 @@ void tree_append_json(Con *con, const char *buf, const size_t len, char **errorm
     if (stat != yajl_status_ok) {
         unsigned char *str = yajl_get_error(hand, 1, (const unsigned char *)buf, len);
         ELOG("JSON parsing error: %s\n", str);
-        if (errormsg != NULL)
-            *errormsg = sstrdup((const char *)str);
-        yajl_free_error(hand, str);
+
         while (incomplete-- > 0) {
             Con *parent = json_node->parent;
             DLOG("freeing incomplete container %p\n", json_node);
@@ -638,6 +636,24 @@ void tree_append_json(Con *con, const char *buf, const size_t len, char **errorm
             con_free(json_node);
             json_node = parent;
         }
+
+        /* yajl doesn't provide a better way to find the type of error */
+        if (strstr((const char *)str, "invalid bytes in UTF8")) {
+            LOG("UTF8 error: retrying\n");
+
+            yajl_free_error(hand, str);
+            yajl_free(hand);
+
+            char *new_buf = g_utf8_make_valid(buf, -1);
+            tree_append_json(con, new_buf, strlen(new_buf), errormsg);
+            free(new_buf);
+            return;
+        }
+
+        if (errormsg != NULL) {
+            *errormsg = sstrdup((const char *)str);
+        }
+        yajl_free_error(hand, str);
     }
 
     /* In case not all containers were restored, we need to fix the
