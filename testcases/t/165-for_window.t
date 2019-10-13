@@ -50,6 +50,9 @@ for_window [window_role="i3test"] border none
 
 # test 12
 for_window [workspace="trigger"] floating enable, mark triggered
+
+# test 13
+for_window [title="test-focus"] focus left
 EOT
 
 # test all window types
@@ -388,6 +391,19 @@ $window = open_window;
 @nodes = @{get_ws('trigger')->{floating_nodes}};
 cmp_ok(@nodes, '==', 1, 'one floating container on this workspace');
 is_deeply($nodes[0]->{nodes}[0]->{marks}, [ 'triggered' ], "mark set for workspace criterion");
+
+kill_all_windows;
+
+##############################################################
+# 13: check that relative focus in for_window works
+# See #1573
+##############################################################
+
+$tmp = fresh_workspace;
+$other = open_window;
+$window = open_window(name => 'test-focus');
+
+is($x->input_focus, $other->id, 'focus moved left');
 
 kill_all_windows;
 

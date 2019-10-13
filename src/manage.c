@@ -582,8 +582,23 @@ void manage_window(xcb_window_t window, xcb_get_window_attributes_cookie_t cooki
         FREE(reply);
     }
 
-    /* Check if any assignments match */
-    run_assignments(cwindow);
+    /* Check if any assignments match. If any assignment changed the focused
+     * container we don't want to modify further to allow 'focus' directives in
+     * for_window rules. See #1573. */
+    if (set_focus) {
+        Con *old_focus = focused;
+        /* Temporarily change focus for relative focus commands to work */
+        con_focus(nc);
+        run_assignments(cwindow);
+        if (focused != nc) {
+            /* Focus changed, maintain the new focus */
+            set_focus = false;
+        } else {
+            con_focus(old_focus);
+        }
+    } else {
+        run_assignments(cwindow);
+    }
 
     /* 'ws' may be invalid because of the assignments, e.g. when the user uses
      * "move window to workspace 1", but had it assigned to workspace 2. */
