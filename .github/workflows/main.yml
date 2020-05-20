@@ -1,0 +1,49 @@
+name: C CI
+
+on:
+  push:
+    branches: [ next, master ]
+  pull_request:
+    branches: [ next ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow
+    - name: install & build deps
+      run : |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends dpkg-dev devscripts git equivs build-essential clang
+        sudo mk-build-deps --install --remove --tool 'apt-get --no-install-recommends -y' debian/control
+    # TODO: if build.system == meson ...
+    # - name: autoreconf
+    #   run: autoreconf -fi && mkdir build
+    # - name: configure
+    #   run: ../configure
+    #   working-directory: build
+    # - name: make
+    #   run: make -j$(nproc) || (cat config.log && false)
+    #   working-directory: build
+    - name: meson
+      run: |
+        mkdir build
+        cd build
+        meson ..
+    - name: ninja
+      run: ninja
+      working-directory: build
+    - name: install test dependencies
+      run: |
+        sudo apt-get install -y cpanminus libanyevent-perl libdata-dump-perl libextutils-depends-perl libextutils-pkgconfig-perl libinline-c-perl libinline-perl libipc-run-perl libjson-xs-perl libmodule-install-perl libmouse-perl libmousex-nativetraits-perl libtest-deep-perl libtest-differences-perl libtest-exception-perl libtest-fatal-perl libtest-simple-perl libx11-xcb-perl libxcb-xtest0-dev libxml-parser-perl libxml-simple-perl libxml-tokeparser-perl perl x11-xserver-utils xauth xcb-proto xserver-xephyr xvfb
+    # - name: make check
+    #   run: make check
+    #   working-directory: build
+    - name: ninja test
+      run: ninja test
+      working-directory: build
