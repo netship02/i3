@@ -51,7 +51,7 @@ jobs:
       run: |
         sudo apt-get install -y cpanminus libanyevent-perl libdata-dump-perl libextutils-depends-perl libextutils-pkgconfig-perl libinline-c-perl libinline-perl libipc-run-perl libjson-xs-perl libmodule-install-perl libmouse-perl libmousex-nativetraits-perl libtest-deep-perl libtest-differences-perl libtest-exception-perl libtest-fatal-perl libtest-simple-perl libx11-xcb-perl libxcb-xtest0-dev libxml-parser-perl libxml-simple-perl libxml-tokeparser-perl perl x11-xserver-utils xauth xcb-proto xserver-xephyr xvfb
     - name: make check
-      run: make check
+      run: make check || testcases/complete-run.pl -p 1
       working-directory: build
       if: ${{ ! matrix.meson }}
     - name: ninja test
