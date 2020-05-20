@@ -12,9 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         meson: [false, true]
-        os: [ubuntu-latest, ubuntu-16.04]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     env:
       DEBIAN_FRONTEND: noninteractive
 
