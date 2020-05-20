@@ -30,7 +30,7 @@ jobs:
       run: autoreconf -fi && mkdir build
       if: ${{ ! matrix.meson }}
     - name: configure
-      run: ../configure
+      run: ../configure || (cat config.log && false)
       working-directory: build
       if: ${{ ! matrix.meson }}
     - name: make
