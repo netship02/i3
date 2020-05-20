@@ -57,7 +57,7 @@ jobs:
     - name: ninja test
       run: |
           ninja AnyEvent-I3.stamp
-          ninja test
+          ninja test || ./complete-run.pl --parallel=1 || (cat latest/complete-run.log; false)
       working-directory: build
       if: ${{ matrix.meson }}
 
