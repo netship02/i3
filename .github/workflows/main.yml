@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: ubuntu-latest build
     strategy:
       fail-fast: false
       matrix:
@@ -57,3 +58,25 @@ jobs:
       run: ninja test
       working-directory: build
       if: ${{ matrix.meson }}
+
+  dockerbuild:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile: [base-386, base, base-ubuntu-386, base-ubuntu]
+        compiler: [clang, gcc]
+    env:
+      CC: ${{ matrix.compiler }}
+      # TODO: CFLAGS, under specific
+
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow
+    - name: Run docker build
+      run: docker build -t i3 . -f travis/travis-${{ matrix.dockerfile }}.Dockerfile
+    - name: docker run autotools
+      run: docker run -v $PWD:/usr/src/i3/ -w /usr/src/i3 -e CC i3 /bin/sh -c 'autoreconf -fi && mkdir -p build && cd build && (../configure || (cat config.log; false)) && make -j CFLAGS="-Wformat -Wformat-security -Wextra -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Werror -fno-common"'
+    - name: docker run meson
+      run: docker run -v $PWD:/usr/src/i3/ -w /usr/src/i3 -e CC i3 /bin/sh -c 'rm -rf build; mkdir -p build && cd build && CFLAGS="-Wformat -Wformat-security -Wextra -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Werror -fno-common" meson .. -Ddocs=true -Dmans=true -Db_sanitize=address && ninja -v'
