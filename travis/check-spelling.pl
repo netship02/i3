@@ -10,18 +10,25 @@ use strict;
 use warnings;
 use v5.10;
 use autodie;
-use lib 'testcases/lib';
-use i3test::Util qw(slurp);
-use Lintian::Spelling qw(check_spelling);
+use Lintian::Check qw(check_spelling);
 
 # Lintian complains if we don’t set a vendor.
 use Lintian::Data;
 use Lintian::Profile;
 
-my $profile = Lintian::Profile->new;
-$profile->load('debian', ['/usr/share/lintian']);
+Lintian::Data->set_vendor(Lintian::Profile->new('debian'));
 
-Lintian::Data->set_vendor($profile);
+
+sub slurp {
+    my ($file) = @_;
+    my $content = do {
+        local $/ = undef;
+        open my $fh, "<", $file or die "could not open $file: $!";
+        <$fh>;
+    };
+
+    return $content;
+}
 
 my $exitcode = 0;
 
