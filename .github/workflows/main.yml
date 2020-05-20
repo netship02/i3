@@ -12,8 +12,9 @@ jobs:
       fail-fast: false
       matrix:
         meson: [false, true]
+        os: [ubuntu-latest, ubuntu-16.04]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     env:
       DEBIAN_FRONTEND: noninteractive
 
@@ -25,7 +26,6 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends dpkg-dev devscripts git equivs build-essential clang
         sudo mk-build-deps --install --remove --tool 'apt-get --no-install-recommends -y' debian/control
-    # TODO: if build.system == meson ...
     - name: autoreconf
       run: autoreconf -fi && mkdir build
       if: ${{ ! matrix.meson }}
