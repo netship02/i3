@@ -7,6 +7,20 @@ on:
     branches: [ next ]
 
 jobs:
+  format:
+    name: check spelling & format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install deps
+        run : |
+          sudo apt-get install -y clang-format cpp perl
+      - run: travis/check-safe-wrappers.sh
+      - name: clang format
+        run : |
+          clang-format -i $(find . -name "*.[ch]" | tr '\n' ' ')
+          git diff --exit-code || (echo 'Code was not formatted using clang-format!'; false)
+
   build:
     name: ubuntu-latest build
     strategy:
@@ -49,7 +63,8 @@ jobs:
       if: ${{ matrix.meson }}
     - name: install test dependencies
       run: |
-        sudo apt-get install -y cpanminus libanyevent-perl libdata-dump-perl libextutils-depends-perl libextutils-pkgconfig-perl libinline-c-perl libinline-perl libipc-run-perl libjson-xs-perl libmodule-install-perl libmouse-perl libmousex-nativetraits-perl libtest-deep-perl libtest-differences-perl libtest-exception-perl libtest-fatal-perl libtest-simple-perl libx11-xcb-perl libxcb-xtest0-dev libxml-parser-perl libxml-simple-perl libxml-tokeparser-perl perl x11-xserver-utils xauth xcb-proto xserver-xephyr xvfb
+        sudo apt-get install -y cpanminus libanyevent-perl libdata-dump-perl libextutils-depends-perl libextutils-pkgconfig-perl libinline-c-perl libinline-perl libipc-run-perl libjson-xs-perl libmodule-install-perl libmouse-perl libmousex-nativetraits-perl libtest-deep-perl libtest-differences-perl libtest-exception-perl libtest-fatal-perl libtest-simple-perl libx11-xcb-perl libxcb-xtest0-dev libxml-parser-perl libxml-simple-perl libxml-tokeparser-perl lintian perl x11-xserver-utils xauth xcb-proto xserver-xephyr xvfb
+    - run: travis/check-spelling.pl
     - name: make check
       run: make check || testcases/complete-run.pl -p 1
       working-directory: build
