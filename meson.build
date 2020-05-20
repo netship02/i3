@@ -618,6 +618,7 @@ i3test_pm = custom_target(
   output: ['i3test.pm'],
   capture: true,
   command: replace_dirs,
+  build_by_default: true,
 )
 
 if get_option('docs')
