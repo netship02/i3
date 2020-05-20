@@ -55,7 +55,9 @@ jobs:
       working-directory: build
       if: ${{ ! matrix.meson }}
     - name: ninja test
-      run: ninja test
+      run: |
+          ninja AnyEvent-I3.stamp
+          ninja test
       working-directory: build
       if: ${{ matrix.meson }}
 
