@@ -61,6 +61,20 @@ Binding *configure_binding(const char *bindtype, const char *modifiers, const ch
                            const char *exclude_titlebar, const char *command, const char *modename,
                            bool pango_markup) {
     Binding *new_binding = scalloc(1, sizeof(Binding));
+
+#define append_str_repr(x) \
+    if ((x))               \
+    sasprintf(&new_binding->str_repr, "%s %s", new_binding->str_repr, (x))
+
+    new_binding->str_repr = strdup(bindtype);
+    append_str_repr(modifiers);
+    append_str_repr(release);
+    append_str_repr(border);
+    append_str_repr(whole_window);
+    append_str_repr(exclude_titlebar);
+    append_str_repr(input_code);
+    append_str_repr(command);
+
     DLOG("Binding %p bindtype %s, modifiers %s, input code %s, release %s\n", new_binding, bindtype, modifiers, input_code, release);
     new_binding->release = (release != NULL ? B_UPON_KEYRELEASE : B_UPON_KEYPRESS);
     new_binding->border = (border != NULL);

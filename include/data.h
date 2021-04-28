@@ -325,6 +325,8 @@ struct Binding {
     /** Command, like in command mode */
     char *command;
 
+    char *str_repr;
+
     TAILQ_ENTRY(Binding) bindings;
 };
 

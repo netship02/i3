@@ -191,6 +191,8 @@ int main(int argc, char *argv[]) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_BINDING_MODES;
             } else if (strcasecmp(optarg, "get_binding_state") == 0) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_BINDING_STATE;
+            } else if (strcasecmp(optarg, "get_bindings") == 0) {
+                message_type = I3_IPC_MESSAGE_TYPE_GET_BINDINGS;
             } else if (strcasecmp(optarg, "get_version") == 0) {
                 message_type = I3_IPC_MESSAGE_TYPE_GET_VERSION;
             } else if (strcasecmp(optarg, "get_config") == 0) {
