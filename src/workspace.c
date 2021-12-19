@@ -501,33 +501,6 @@ void workspace_show(Con *workspace) {
     ipc_send_workspace_event("focus", workspace, current);
 
     DLOG("old = %p / %s\n", old, (old ? old->name : "(null)"));
-    /* Close old workspace if necessary. This must be done *after* doing
-     * urgency handling, because tree_close_internal() will do a con_focus() on the next
-     * client, which will clear the urgency flag too early. Also, there is no
-     * way for con_focus() to know about when to clear urgency immediately and
-     * when to defer it. */
-    if (old && TAILQ_EMPTY(&(old->nodes_head)) && TAILQ_EMPTY(&(old->floating_head))) {
-        /* check if this workspace is currently visible */
-        if (!workspace_is_visible(old)) {
-            LOG("Closing old workspace (%p / %s), it is empty\n", old, old->name);
-            yajl_gen gen = ipc_marshal_workspace_event("empty", old, NULL);
-            tree_close_internal(old, DONT_KILL_WINDOW, false);
-
-            const unsigned char *payload;
-            ylength length;
-            y(get_buf, &payload, &length);
-            ipc_send_event("workspace", I3_IPC_EVENT_WORKSPACE, (const char *)payload);
-
-            y(free);
-
-            /* Avoid calling output_push_sticky_windows later with a freed container. */
-            if (old == old_focus) {
-                old_focus = NULL;
-            }
-
-            ewmh_update_desktop_properties();
-        }
-    }
 
     workspace->fullscreen_mode = CF_OUTPUT;
     LOG("focused now = %p / %s\n", focused, focused->name);
